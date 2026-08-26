@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TIERRA EN VIVO — Feed Orbital</title>
+<title>TIERRA REAL — Feed Orbital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Big+Shoulders+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
@@ -21,16 +21,16 @@
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{
-    background: radial-gradient(ellipse at 50% 20%, var(--bg2), var(--bg) 70%);
+    background: var(--bg);
     color: var(--text);
     font-family: 'Space Mono', monospace;
-    width:100%; height:100%; overflow:hidden;
+    width:100%; min-height:100%; overflow-x:hidden; overflow-y:auto;
   }
   .stage{
     position:relative;
     width:100%;
-    height:100vh;
-    min-height:560px;
+    min-height:100vh;
+    background: radial-gradient(ellipse at 50% 20%, var(--bg2), var(--bg) 70%);
     display:flex;
     flex-direction:column;
   }
@@ -118,9 +118,9 @@
   }
   .globe-wrap{
     position:relative;
-    width: min(46vw, 420px);
-    height: min(46vw, 420px);
-    min-width:220px; min-height:220px;
+    width: min(54vw, 500px);
+    height: min(54vw, 500px);
+    min-width:240px; min-height:240px;
     border-radius:50%;
     transform-style:preserve-3d;
     transition: transform 0.15s ease-out;
@@ -138,14 +138,8 @@
   }
   .earth-disc-holder{
     position:absolute; inset:0;
-    border-radius:50%;
     overflow:hidden;
-    box-shadow:
-      0 0 0 1px rgba(57,255,150,0.25),
-      0 0 40px rgba(57,255,150,0.15),
-      inset 0 0 60px rgba(0,0,0,0.6),
-      inset -18px -10px 70px rgba(0,10,20,0.65);
-    background: #060a12;
+    background: transparent;
     cursor: grab;
     touch-action: none;
   }
@@ -161,16 +155,10 @@
     will-change: transform;
     user-select:none;
     -webkit-user-drag:none;
+    -webkit-mask-image: radial-gradient(circle closest-side, #000 0%, #000 74%, transparent 94%);
+    mask-image: radial-gradient(circle closest-side, #000 0%, #000 74%, transparent 94%);
   }
   .earth-disc.loaded{ opacity:1; }
-  .earth-disc.idle-spin{
-    animation: slowspin 90s linear infinite;
-  }
-  @keyframes slowspin{
-    0%{ transform: scale(1.02) rotate(0deg); }
-    50%{ transform: scale(1.05) rotate(0.6deg); }
-    100%{ transform: scale(1.02) rotate(0deg); }
-  }
   .zoom-hint{
     position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
     font-size:9px; letter-spacing:0.08em; color: rgba(217,231,225,0.55);
@@ -187,6 +175,19 @@
     display:flex; flex-direction:column; gap:4px;
     z-index:3;
   }
+  .epic-badge{
+    position:absolute; top:8px; left:8px;
+    font-size:9.5px; letter-spacing:0.06em;
+    background: rgba(5,7,13,0.65);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:4px 10px;
+    color: var(--text-dim);
+    text-transform:uppercase;
+    z-index:3;
+    pointer-events:none;
+  }
+  .epic-badge b{ color: var(--amber); }
   .zoom-btn{
     width:24px; height:24px;
     border-radius:4px;
@@ -293,9 +294,114 @@
     border-radius:50%;
     transform: translate(-50%,-50%);
   }
+  .user-dot{
+    position:absolute;
+    width:9px; height:9px;
+    background: #7fd3ff;
+    border-radius:50%;
+    box-shadow: 0 0 10px #7fd3ff, 0 0 20px rgba(127,211,255,0.5);
+    transform: translate(-50%,-50%);
+    transition: left 0.6s linear, top 0.6s linear;
+    z-index:2;
+  }
   .grid-caption{
     font-size:9px; color: var(--text-dim); letter-spacing:0.08em; text-align:right;
   }
+  .sat-dot{
+    position:absolute;
+    width:14px; height:14px;
+    background: rgba(201,166,255,0.18);
+    border:1px solid #c9a6ff;
+    border-radius:50%;
+    box-shadow: 0 0 6px rgba(201,166,255,0.6);
+    color:#c9a6ff;
+    font-size:8px; font-weight:700;
+    font-family:'Space Mono', monospace;
+    display:flex; align-items:center; justify-content:center;
+    transform: translate(-50%,-50%);
+    transition: left 0.6s linear, top 0.6s linear;
+    z-index:1;
+  }
+  .sat-panel{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+  }
+  .sat-panel-title{
+    font-size:9.5px; letter-spacing:0.12em; color: var(--text-dim); text-transform:uppercase;
+    margin-bottom:8px; display:flex; justify-content:space-between;
+  }
+  .sat-list{
+    display:flex; flex-direction:column; gap:5px;
+    max-height:130px; overflow-y:auto;
+    padding-right:10px;
+  }
+  .sat-row{
+    display:flex; align-items:center; gap:7px;
+    font-size:10px; color: var(--text);
+  }
+  .sat-row .swatch{
+    width:14px; height:14px; border-radius:50%;
+    background: rgba(201,166,255,0.18);
+    border:1px solid #c9a6ff;
+    box-shadow:0 0 6px rgba(201,166,255,0.6);
+    color:#c9a6ff;
+    font-size:8px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .sat-row .name{ flex:1; letter-spacing:0.03em; }
+  .sat-row .alt{ color: var(--text-dim); font-size:9px; min-width:46px; text-align:right; flex-shrink:0; }
+  .info-row{
+    display:flex; align-items:flex-start; gap:7px;
+    font-size:10px; color: var(--text);
+    padding:3px 0;
+  }
+  .info-row .tag{
+    font-size:8px; letter-spacing:0.04em; text-transform:uppercase;
+    padding:2px 6px; border-radius:3px; flex-shrink:0;
+    border:1px solid var(--line); color:var(--text-dim);
+    margin-top:1px;
+  }
+  .info-row .tag.warn{ border-color:var(--danger); color:var(--danger); }
+  .info-row .main{ flex:1; letter-spacing:0.03em; }
+  .info-row .sub{ color: var(--text-dim); font-size:9px; margin-top:1px; }
+  .landsat-box{ margin-top:10px; }
+  .landsat-caption{
+    font-size:9px; color: var(--text-dim); letter-spacing:0.06em;
+    text-transform:uppercase; margin-bottom:6px;
+  }
+  .landsat-frame{
+    position:relative; width:140px; aspect-ratio:1/1;
+    border:1px solid var(--line); border-radius:4px;
+    overflow:hidden; background:#050a08;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .landsat-status{ font-size:9px; color: var(--text-dim); text-align:center; padding:8px; }
+  .landsat-frame img{ width:100%; height:100%; object-fit:cover; }
+  .locate-row{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .locate-btn{
+    align-self:flex-start;
+    font-family:'Space Mono', monospace;
+    font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color: var(--phosphor);
+    background: rgba(57,255,150,0.08);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:7px 12px;
+    cursor:pointer;
+  }
+  .locate-btn:hover{ background: rgba(57,255,150,0.18); }
+  .locate-btn:disabled{ opacity:0.5; cursor:default; }
+  .locate-info{
+    font-size:9.5px; color: var(--text-dim); letter-spacing:0.04em; line-height:1.5;
+  }
+  .locate-info b{ color:#7fd3ff; }
 
   .footer-note{
     position:relative; z-index:2;
@@ -310,7 +416,7 @@
 
   @media (max-width: 720px){
     .main{ flex-direction:column; gap:22px; padding-top:6px; }
-    .globe-wrap{ width:min(62vw,300px); height:min(62vw,300px); }
+    .globe-wrap{ width:min(78vw,340px); height:min(78vw,340px); }
   }
 </style>
 </head>
@@ -320,8 +426,8 @@
 
   <div class="hud-top">
     <div class="title-block">
-      <h1>TIERRA <span>EN VIVO</span></h1>
-      <div class="sub">Foto real vía NASA EPIC · Posición orbital ISS en tiempo real</div>
+      <h1>TIERRA <span>REAL</span></h1>
+      <div class="sub">Última captura vía NASA EPIC · Posición orbital ISS en tiempo real</div>
     </div>
     <div class="clock-block">
       <div class="clock" id="clock">--:--:--</div>
@@ -335,14 +441,15 @@
         <div class="glow-ring"></div>
         <div class="earth-disc-holder" id="discHolder">
           <div class="disc-placeholder" id="discPlaceholder">Cargando imagen satelital…</div>
-          <img id="earthImg" class="earth-disc idle-spin" alt="Imagen más reciente de la Tierra, cámara EPIC, satélite DSCOVR">
+          <img id="earthImg" class="earth-disc" alt="Imagen más reciente de la Tierra, cámara EPIC, satélite DSCOVR">
           <div class="scanline"></div>
           <div class="zoom-hint" id="zoomHint">Scroll o pellizca para acercar</div>
-          <div class="zoom-controls">
-            <div class="zoom-btn" id="zoomIn" title="Acercar">+</div>
-            <div class="zoom-btn" id="zoomOut" title="Alejar">−</div>
-            <div class="zoom-btn" id="zoomReset" title="Restablecer">⟲</div>
-          </div>
+          <div class="epic-badge" id="epicBadge">Cargando…</div>
+        </div>
+        <div class="zoom-controls">
+          <div class="zoom-btn" id="zoomIn" title="Acercar">+</div>
+          <div class="zoom-btn" id="zoomOut" title="Alejar">−</div>
+          <div class="zoom-btn" id="zoomReset" title="Restablecer">⟲</div>
         </div>
       </div>
       <div class="epic-caption" id="epicCaption">— sin datos —</div>
@@ -375,12 +482,37 @@
         <div class="iss-dot" id="issDot" style="left:50%; top:50%;"></div>
       </div>
       <div class="grid-caption">−180°W ................. 0° ................. +180°E</div>
+      <div class="locate-row">
+        <button class="locate-btn" id="locateBtn">📍 Ver mi ubicación</button>
+        <div class="locate-info" id="locateInfo">Usa tu ubicación del dispositivo para marcarte en el mapa (punto azul).</div>
+        <div class="landsat-box" id="landsatBox" style="display:none;">
+          <div class="landsat-caption">Imagen satelital (Landsat) de tu zona</div>
+          <div class="landsat-frame" id="landsatFrame">
+            <div class="landsat-status" id="landsatStatus">Cargando…</div>
+            <img id="landsatImg" alt="Imagen satelital Landsat de tu ubicación" style="display:none;">
+          </div>
+        </div>
+      </div>
+      <div class="sat-panel">
+        <div class="sat-panel-title"><span>OTROS SATÉLITES</span><span id="satStatus">cargando…</span></div>
+        <div class="sat-list" id="satList"></div>
+      </div>
+      <div class="sat-panel">
+        <div class="sat-panel-title"><span>CLIMA ESPACIAL</span><span id="weatherStatus">cargando…</span></div>
+        <div class="sat-list" id="weatherList"></div>
+      </div>
+      <div class="sat-panel">
+        <div class="sat-panel-title"><span>ASTEROIDES CERCANOS (24H)</span><span id="neoStatus">cargando…</span></div>
+        <div class="sat-list" id="neoList"></div>
+        <div class="grid-caption" style="text-align:left; margin-top:4px;">DL = distancia lunar (384 400 km)</div>
+      </div>
     </div>
   </div>
 
   <div class="footer-note">Datos: <b>NASA EPIC / DSCOVR</b> &nbsp;·&nbsp; <b>Where The ISS At?</b> API &nbsp;·&nbsp; actualización automática</div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@5/dist/satellite.min.js"></script>
 <script>
 (function(){
   // ---------- starfield ----------
@@ -431,11 +563,6 @@
 
   function applyTransform(){
     earthImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-    if(scale > 1){
-      earthImg.classList.remove('idle-spin');
-    } else {
-      earthImg.classList.add('idle-spin');
-    }
   }
 
   function clampPan(){
@@ -556,19 +683,35 @@
   const earthImg = document.getElementById('earthImg');
   const discPlaceholder = document.getElementById('discPlaceholder');
   const epicCaption = document.getElementById('epicCaption');
+  const epicBadge = document.getElementById('epicBadge');
 
-  // ⚠️ La clave DEMO_KEY es compartida por miles de personas y se agota rápido
-  // (límite: 30 peticiones/hora, 50/día por IP). Consigue la tuya gratis en
-  // https://api.nasa.gov (toma 30 segundos, sin tarjeta) y pégala aquí:
+  // Clave personal de api.nasa.gov (límites más altos que DEMO_KEY).
   const NASA_KEY = 'JqkYPNmYcUbLxl0No02zjax7732RypBRc0Bb9vfc';
 
   let hasLoadedOnce = false;
+  let epicCaptureDate = null;
 
-  function pad(n){ return String(n).padStart(2,'0'); }
+  function formatAge(ms){
+    const mins = Math.floor(ms / 60000);
+    if(mins < 60) return `hace ${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if(hours < 48) return `hace ${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `hace ${days}d ${hours % 24}h`;
+  }
+
+  function updateEpicCaption(){
+    if(!epicCaptureDate) return;
+    const dateStr = epicCaptureDate.toISOString().slice(0,16).replace('T',' ');
+    const age = formatAge(Date.now() - epicCaptureDate.getTime());
+    epicCaption.innerHTML = `Última captura EPIC · <b>${dateStr} UTC</b> · ${age}`;
+    epicBadge.innerHTML = `📷 Foto real · <b>${age}</b>`;
+  }
+  setInterval(updateEpicCaption, 60000);
 
   async function loadEpic(){
     try{
-      const res = await fetch(`https://api.nasa.gov/EPIC/api/natural/images?api_key=${NASA_KEY}`);
+      const res = await fetch(`https://api.nasa.gov/EPIC/api/natural?api_key=${NASA_KEY}`);
       if(res.status === 429){
         throw new Error('RATE_LIMIT');
       }
@@ -590,15 +733,16 @@
       earthImg.src = url;
       earthImg.classList.add('loaded');
       discPlaceholder.style.display = 'none';
-      const dt = new Date(latest.date.replace(' ','T')+'Z');
-      epicCaption.innerHTML = `Captura EPIC · <b>${dt.toISOString().slice(0,16).replace('T',' ')} UTC</b>`;
+      epicCaptureDate = new Date(latest.date.replace(' ','T')+'Z');
+      updateEpicCaption();
       epicOk = true;
       hasLoadedOnce = true;
     }catch(err){
       epicOk = false;
       if(hasLoadedOnce){
         // keep showing the last good image, just flag the caption
-        epicCaption.innerHTML = `Última captura disponible · <span style="color:var(--danger)">sin actualizar</span>`;
+        updateEpicCaption();
+        epicCaption.innerHTML += ` · <span style="color:var(--danger)">sin actualizar</span>`;
       } else if(err.message === 'RATE_LIMIT'){
         discPlaceholder.textContent = 'Límite de peticiones de la clave DEMO_KEY alcanzado (compartida por miles de usuarios). Usa tu propia clave gratis de api.nasa.gov para solucionarlo.';
         epicCaption.textContent = 'Límite de la API alcanzado';
@@ -626,11 +770,50 @@
   const trailPoints = [];
   const MAX_TRAIL = 25;
 
+  // Dots can end up very close together (e.g. several satellites near the
+  // same ground track). This nudges overlapping markers apart in pixel
+  // space so their numbers stay readable, without touching the real
+  // lat/lon data (trails and telemetry values are unaffected).
+  function applyDodge(){
+    const dots = Array.from(trackGrid.querySelectorAll('.iss-dot, .user-dot, .sat-dot'))
+      .filter(el => el.dataset.rawLeft !== undefined);
+    if(dots.length === 0) return;
+    const rect = trackGrid.getBoundingClientRect();
+    if(rect.width === 0 || rect.height === 0) return;
+    const pts = dots.map(el => ({
+      el,
+      x: (parseFloat(el.dataset.rawLeft)/100) * rect.width,
+      y: (parseFloat(el.dataset.rawTop)/100) * rect.height
+    }));
+    const minDist = 15;
+    for(let iter=0; iter<4; iter++){
+      for(let i=0;i<pts.length;i++){
+        for(let j=i+1;j<pts.length;j++){
+          const dx = pts[j].x - pts[i].x;
+          const dy = pts[j].y - pts[i].y;
+          const dist = Math.max(0.001, Math.hypot(dx,dy));
+          if(dist < minDist){
+            const push = (minDist - dist) / 2;
+            const ux = dx/dist, uy = dy/dist;
+            pts[i].x -= ux*push; pts[i].y -= uy*push;
+            pts[j].x += ux*push; pts[j].y += uy*push;
+          }
+        }
+      }
+    }
+    pts.forEach(p=>{
+      const cx = Math.max(0, Math.min(rect.width, p.x));
+      const cy = Math.max(0, Math.min(rect.height, p.y));
+      p.el.style.left = (cx/rect.width*100) + '%';
+      p.el.style.top = (cy/rect.height*100) + '%';
+    });
+  }
+
   function placeDot(lat, lon){
     const leftPct = ((lon + 180) / 360) * 100;
     const topPct = ((90 - lat) / 180) * 100;
-    issDot.style.left = leftPct + '%';
-    issDot.style.top = topPct + '%';
+    issDot.dataset.rawLeft = leftPct;
+    issDot.dataset.rawTop = topPct;
     return {leftPct, topPct};
   }
 
@@ -658,6 +841,7 @@
       issVel.innerHTML = Math.round(data.velocity) + '<span class="unit">km/h</span>';
       const {leftPct, topPct} = placeDot(data.latitude, data.longitude);
       addTrail(leftPct, topPct);
+      applyDodge();
       lastIssUpdate = Date.now();
       issOk = true;
     }catch(err){
@@ -675,6 +859,286 @@
       issAge.textContent = 'hace ' + secs + 's';
     }
   }, 1000);
+
+  // ---------- user geolocation ----------
+  const locateBtn = document.getElementById('locateBtn');
+  const locateInfo = document.getElementById('locateInfo');
+  let userDot = null;
+
+  function placeUserDot(lat, lon){
+    if(!userDot){
+      userDot = document.createElement('div');
+      userDot.className = 'user-dot';
+      userDot.title = 'Tu ubicación';
+      trackGrid.appendChild(userDot);
+    }
+    userDot.dataset.rawLeft = ((lon + 180) / 360) * 100;
+    userDot.dataset.rawTop = ((90 - lat) / 180) * 100;
+    applyDodge();
+  }
+
+  async function reverseGeocode(lat, lon){
+    try{
+      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`);
+      if(!res.ok) throw new Error('geocode HTTP '+res.status);
+      const data = await res.json();
+      const place = data.city || data.locality;
+      if(place && data.countryName) return `${place}, ${data.countryName}`;
+      return data.countryName || null;
+    }catch(err){
+      return null;
+    }
+  }
+
+  // ---------- Earth Imagery (Landsat) for the user's own location ----------
+  const landsatBox = document.getElementById('landsatBox');
+  const landsatStatus = document.getElementById('landsatStatus');
+  const landsatImg = document.getElementById('landsatImg');
+
+  function loadLandsat(lat, lon){
+    landsatBox.style.display = 'block';
+    landsatStatus.style.display = 'block';
+    landsatStatus.textContent = 'Cargando imagen satelital…';
+    landsatImg.style.display = 'none';
+
+    let settled = false;
+    const timeoutId = setTimeout(()=>{
+      if(settled) return;
+      settled = true;
+      landsatImg.removeAttribute('src');
+      landsatStatus.textContent = 'Imagen satelital no disponible ahora mismo.';
+    }, 12000);
+
+    landsatImg.onload = ()=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      landsatStatus.style.display = 'none';
+      landsatImg.style.display = 'block';
+    };
+    landsatImg.onerror = ()=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      landsatStatus.textContent = 'Sin cobertura Landsat para esta zona.';
+    };
+    landsatImg.src = `https://api.nasa.gov/planetary/earth/imagery?lon=${lon}&lat=${lat}&dim=0.10&api_key=${NASA_KEY}`;
+  }
+
+  function locateMe(){
+    if(!navigator.geolocation){
+      locateInfo.textContent = 'Tu navegador no soporta geolocalización.';
+      return;
+    }
+    locateBtn.disabled = true;
+    locateBtn.textContent = 'Ubicando…';
+    locateInfo.textContent = 'Esperando permiso de ubicación…';
+    navigator.geolocation.getCurrentPosition(async (pos)=>{
+      const { latitude, longitude } = pos.coords;
+      placeUserDot(latitude, longitude);
+      locateBtn.disabled = false;
+      locateBtn.textContent = '📍 Actualizar mi ubicación';
+      locateInfo.innerHTML = `Estás en <b>${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°</b>`;
+      loadLandsat(latitude, longitude);
+      const place = await reverseGeocode(latitude, longitude);
+      if(place){
+        locateInfo.innerHTML = `Estás en <b>${place}</b> · ${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`;
+      }
+    }, (err)=>{
+      locateBtn.disabled = false;
+      locateBtn.textContent = '📍 Ver mi ubicación';
+      if(err.code === err.PERMISSION_DENIED){
+        locateInfo.textContent = 'Permiso de ubicación denegado. Puedes habilitarlo en los ajustes del navegador.';
+      } else {
+        locateInfo.textContent = 'No se pudo obtener tu ubicación. Intenta de nuevo.';
+      }
+    }, { enableHighAccuracy:false, timeout:10000, maximumAge:5*60000 });
+  }
+
+  locateBtn.addEventListener('click', locateMe);
+
+  // ---------- other artificial satellites (real TLE + SGP4 propagation) ----------
+  const OTHER_SATS = [
+    { id: 48274, name: 'TIANGONG (CSS)', color: '#7fd3ff' },
+    { id: 20580, name: 'HUBBLE (HST)',   color: '#ffd166' },
+    { id: 33591, name: 'NOAA 19',        color: '#ff8fb1' },
+    { id: 39084, name: 'LANDSAT 8',      color: '#7fffcf' },
+    { id: 25994, name: 'TERRA',          color: '#7fffcf' },
+    { id: 41866, name: 'GOES 16',        color: '#ff8fb1' },
+    { id: 43873, name: 'GPS NAVSTAR 77', color: '#c9a6ff' }
+  ];
+
+  const satList = document.getElementById('satList');
+  const satStatus = document.getElementById('satStatus');
+  const satEntries = [];
+
+  async function fetchTLE(id){
+    const res = await fetch(`https://celestrak.org/NORAD/elements/gp.php?CATNR=${id}&FORMAT=TLE`);
+    if(!res.ok) throw new Error('TLE HTTP '+res.status);
+    const text = await res.text();
+    const lines = text.trim().split('\n').map(l=>l.trim());
+    if(lines.length < 3) throw new Error('TLE incompleto');
+    return { line1: lines[1], line2: lines[2] };
+  }
+
+  function updateSatellites(){
+    if(satEntries.length === 0) return;
+    const now = new Date();
+    const gmst = satellite.gstime(now);
+    satEntries.forEach(entry=>{
+      try{
+        const pv = satellite.propagate(entry.satrec, now);
+        if(!pv || !pv.position) return;
+        const geo = satellite.eciToGeodetic(pv.position, gmst);
+        const lat = satellite.degreesLat(geo.latitude);
+        const lon = satellite.degreesLong(geo.longitude);
+        entry.dot.dataset.rawLeft = ((lon + 180) / 360) * 100;
+        entry.dot.dataset.rawTop = ((90 - lat) / 180) * 100;
+        entry.altEl.textContent = Math.round(geo.height) + ' km';
+      }catch(err){
+        // keep last known position if propagation fails for this tick
+      }
+    });
+    applyDodge();
+  }
+
+  async function initSatellites(){
+    if(!window.satellite){
+      satStatus.textContent = 'motor orbital no disponible';
+      return;
+    }
+    let loaded = 0;
+    for(let i=0; i<OTHER_SATS.length; i++){
+      const sat = OTHER_SATS[i];
+      const num = i + 1;
+      try{
+        const { line1, line2 } = await fetchTLE(sat.id);
+        const satrec = satellite.twoline2satrec(line1, line2);
+
+        const dot = document.createElement('div');
+        dot.className = 'sat-dot';
+        dot.title = `${num}. ${sat.name}`;
+        dot.textContent = num;
+        dot.style.borderColor = sat.color;
+        dot.style.color = sat.color;
+        dot.style.background = sat.color + '30';
+        dot.style.boxShadow = `0 0 6px ${sat.color}`;
+        trackGrid.appendChild(dot);
+
+        const row = document.createElement('div');
+        row.className = 'sat-row';
+        row.innerHTML = `<span class="swatch" style="border-color:${sat.color};color:${sat.color};background:${sat.color}30;box-shadow:0 0 6px ${sat.color}">${num}</span><span class="name">${sat.name}</span><span class="alt">--</span>`;
+        satList.appendChild(row);
+
+        satEntries.push({ name: sat.name, satrec, dot, altEl: row.querySelector('.alt') });
+        loaded++;
+      }catch(err){
+        // skip this satellite, keep going with the rest
+      }
+    }
+    satStatus.textContent = loaded > 0 ? `${loaded} activos` : 'sin datos';
+    updateSatellites();
+  }
+
+  initSatellites();
+  setInterval(updateSatellites, 5000);
+
+  // ---------- DONKI space weather ----------
+  const weatherList = document.getElementById('weatherList');
+  const weatherStatus = document.getElementById('weatherStatus');
+
+  const DONKI_LABELS = {
+    FLR: 'Erupción solar', CME: 'Eyección coronal (CME)', GST: 'Tormenta geomagnética',
+    IPS: 'Choque interplanetario', SEP: 'Partículas solares', RBE: 'Cinturón de radiación',
+    MPC: 'Cambio de magnetopausa', HSS: 'Corriente de alta velocidad'
+  };
+
+  function relTime(dateStr){
+    const ms = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(ms / 60000);
+    if(mins < 60) return `hace ${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if(hours < 48) return `hace ${hours}h`;
+    return `hace ${Math.floor(hours / 24)}d`;
+  }
+
+  async function loadSpaceWeather(){
+    try{
+      const res = await fetch(`https://api.nasa.gov/DONKI/notifications?type=all&api_key=${NASA_KEY}`);
+      if(!res.ok) throw new Error('DONKI HTTP '+res.status);
+      const data = await res.json();
+      if(!Array.isArray(data)) throw new Error('formato inesperado');
+      const recent = data
+        .filter(n => (Date.now() - new Date(n.messageIssueTime).getTime()) < 48*3600000)
+        .sort((a,b) => new Date(b.messageIssueTime) - new Date(a.messageIssueTime))
+        .slice(0,5);
+      weatherList.innerHTML = '';
+      if(recent.length === 0){
+        weatherStatus.innerHTML = `<span style="color:var(--phosphor)">tranquilo</span>`;
+        weatherList.innerHTML = `<div class="info-row"><span class="main sub">Sin eventos en las últimas 48h.</span></div>`;
+      } else {
+        weatherStatus.innerHTML = `<span style="color:var(--amber)">${recent.length} evento(s)</span>`;
+        recent.forEach(n=>{
+          const label = DONKI_LABELS[n.messageType] || n.messageType;
+          const row = document.createElement('div');
+          row.className = 'info-row';
+          row.innerHTML = `<span class="tag">${n.messageType}</span><span class="main">${label}<div class="sub">${relTime(n.messageIssueTime)}</div></span>`;
+          weatherList.appendChild(row);
+        });
+      }
+    }catch(err){
+      weatherStatus.textContent = 'sin datos';
+      weatherList.innerHTML = `<div class="info-row"><span class="main sub">No se pudo cargar el clima espacial.</span></div>`;
+    }
+  }
+
+  loadSpaceWeather();
+  setInterval(loadSpaceWeather, 15*60000);
+
+  // ---------- NeoWs: near-Earth asteroids ----------
+  const neoList = document.getElementById('neoList');
+  const neoStatus = document.getElementById('neoStatus');
+
+  function dateStr(d){ return d.toISOString().slice(0,10); }
+
+  async function loadAsteroids(){
+    try{
+      const today = new Date();
+      const tomorrow = new Date(today.getTime() + 86400000);
+      const res = await fetch(`https://api.nasa.gov/neo/rest/v1/feed?start_date=${dateStr(today)}&end_date=${dateStr(tomorrow)}&api_key=${NASA_KEY}`);
+      if(!res.ok) throw new Error('NeoWs HTTP '+res.status);
+      const data = await res.json();
+      const all = Object.values(data.near_earth_objects || {}).flat();
+      all.sort((a,b)=>{
+        const da = parseFloat(a.close_approach_data[0]?.miss_distance?.kilometers ?? Infinity);
+        const db = parseFloat(b.close_approach_data[0]?.miss_distance?.kilometers ?? Infinity);
+        return da - db;
+      });
+      const top = all.slice(0,5);
+      neoStatus.textContent = `${all.length} en 24h`;
+      neoList.innerHTML = '';
+      if(top.length === 0){
+        neoList.innerHTML = `<div class="info-row"><span class="main sub">Sin aproximaciones registradas.</span></div>`;
+        return;
+      }
+      top.forEach(neo=>{
+        const cad = neo.close_approach_data[0];
+        const ld = cad ? parseFloat(cad.miss_distance.lunar).toFixed(1) : '--';
+        const vel = cad ? Math.round(parseFloat(cad.relative_velocity.kilometers_per_hour)) : null;
+        const hazardous = neo.is_potentially_hazardous_asteroid;
+        const row = document.createElement('div');
+        row.className = 'info-row';
+        row.innerHTML = `<span class="tag${hazardous?' warn':''}">${hazardous?'⚠':'○'}</span><span class="main">${neo.name}<div class="sub">${ld} DL${vel!==null ? ' · '+vel.toLocaleString('es')+' km/h' : ''}</div></span>`;
+        neoList.appendChild(row);
+      });
+    }catch(err){
+      neoStatus.textContent = 'sin datos';
+      neoList.innerHTML = `<div class="info-row"><span class="main sub">No se pudo cargar la lista de asteroides.</span></div>`;
+    }
+  }
+
+  loadAsteroids();
+  setInterval(loadAsteroids, 30*60000);
 
 })();
 </script>
