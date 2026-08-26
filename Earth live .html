@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIERRA EN VIVO — Feed Orbital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Big+Shoulders+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #05070d;
+    --bg2: #090c16;
+    --panel: rgba(9,13,22,0.78);
+    --line: rgba(57,255,150,0.16);
+    --phosphor: #39ff96;
+    --phosphor-dim: #1f8f5c;
+    --amber: #ffb454;
+    --text: #d9e7e1;
+    --text-dim: #5f7a72;
+    --danger: #ff5c5c;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background: radial-gradient(ellipse at 50% 20%, var(--bg2), var(--bg) 70%);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    width:100%; height:100%; overflow:hidden;
+  }
+  .stage{
+    position:relative;
+    width:100%;
+    height:100vh;
+    min-height:560px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- stars ---------- */
+  #stars{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+  }
+  .star{
+    position:absolute; background:#fff; border-radius:50%;
+    animation: twinkle var(--dur) ease-in-out infinite;
+    opacity:0.2;
+  }
+  @keyframes twinkle{
+    0%,100%{opacity:0.15;}
+    50%{opacity:0.9;}
+  }
+
+  /* ---------- header ---------- */
+  .hud-top{
+    position:relative; z-index:2;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding: 22px 28px 0 28px;
+    flex-wrap:wrap; gap:10px;
+  }
+  .title-block h1{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:900;
+    font-size: clamp(28px, 5vw, 46px);
+    letter-spacing: 0.04em;
+    line-height:0.9;
+    color: var(--text);
+    text-shadow: 0 0 18px rgba(57,255,150,0.25);
+  }
+  .title-block h1 span{ color: var(--phosphor); }
+  .title-block .sub{
+    margin-top:6px;
+    font-size:11px;
+    letter-spacing:0.18em;
+    color: var(--text-dim);
+    text-transform:uppercase;
+  }
+  .clock-block{
+    text-align:right;
+    font-size:12px;
+    color: var(--phosphor-dim);
+    letter-spacing:0.08em;
+  }
+  .clock-block .clock{
+    font-size:20px;
+    color: var(--phosphor);
+    font-weight:700;
+  }
+  .clock-block .status{
+    margin-top:4px;
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:10px; letter-spacing:0.15em; text-transform:uppercase;
+    color: var(--text-dim);
+  }
+  .dot-pulse{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--phosphor);
+    box-shadow:0 0 8px var(--phosphor);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .dot-pulse.bad{ background:var(--danger); box-shadow:0 0 8px var(--danger); }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  /* ---------- main layout ---------- */
+  .main{
+    position:relative; z-index:2;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 4vw;
+    padding: 10px 28px 28px 28px;
+    flex-wrap:wrap;
+  }
+
+  /* ---------- globe ---------- */
+  .globe-stage{
+    perspective: 1200px;
+    flex-shrink:0;
+  }
+  .globe-wrap{
+    position:relative;
+    width: min(46vw, 420px);
+    height: min(46vw, 420px);
+    min-width:220px; min-height:220px;
+    border-radius:50%;
+    transform-style:preserve-3d;
+    transition: transform 0.15s ease-out;
+  }
+  .glow-ring{
+    position:absolute; inset:-14px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, rgba(120,200,255,0.35), transparent 60%);
+    filter: blur(10px);
+    animation: breathe 5s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%,100%{ opacity:0.6; }
+    50%{ opacity:1; }
+  }
+  .earth-disc-holder{
+    position:absolute; inset:0;
+    border-radius:50%;
+    overflow:hidden;
+    box-shadow:
+      0 0 0 1px rgba(57,255,150,0.25),
+      0 0 40px rgba(57,255,150,0.15),
+      inset 0 0 60px rgba(0,0,0,0.6),
+      inset -18px -10px 70px rgba(0,10,20,0.65);
+    background: #060a12;
+    cursor: grab;
+    touch-action: none;
+  }
+  .earth-disc-holder.dragging{ cursor: grabbing; }
+  .earth-disc{
+    width:100%; height:100%;
+    object-fit: cover;
+    display:block;
+    filter: saturate(1.08) contrast(1.05);
+    opacity:0;
+    transition: opacity 1.2s ease, transform 0.06s linear;
+    transform-origin: 50% 50%;
+    will-change: transform;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  .earth-disc.loaded{ opacity:1; }
+  .earth-disc.idle-spin{
+    animation: slowspin 90s linear infinite;
+  }
+  @keyframes slowspin{
+    0%{ transform: scale(1.02) rotate(0deg); }
+    50%{ transform: scale(1.05) rotate(0.6deg); }
+    100%{ transform: scale(1.02) rotate(0deg); }
+  }
+  .zoom-hint{
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    font-size:9px; letter-spacing:0.08em; color: rgba(217,231,225,0.55);
+    background: rgba(5,7,13,0.55);
+    padding:3px 9px; border-radius:20px;
+    pointer-events:none;
+    text-transform:uppercase;
+    opacity:0.85;
+    transition: opacity 0.4s ease;
+    z-index:3;
+  }
+  .zoom-controls{
+    position:absolute; bottom:8px; right:8px;
+    display:flex; flex-direction:column; gap:4px;
+    z-index:3;
+  }
+  .zoom-btn{
+    width:24px; height:24px;
+    border-radius:4px;
+    border:1px solid var(--line);
+    background: rgba(5,7,13,0.65);
+    color: var(--phosphor);
+    font-family:'Space Mono', monospace;
+    font-size:14px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .zoom-btn:hover{ background: rgba(57,255,150,0.15); }
+  .scanline{
+    position:absolute; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--phosphor), transparent);
+    opacity:0.5;
+    animation: scan 4.2s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes scan{
+    0%{ top:0%; opacity:0; }
+    10%{ opacity:0.6; }
+    90%{ opacity:0.6; }
+    100%{ top:100%; opacity:0; }
+  }
+  .disc-placeholder{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; letter-spacing:0.1em; color: var(--text-dim);
+    text-align:center; padding:20px;
+  }
+  .epic-caption{
+    margin-top:14px;
+    text-align:center;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    color: var(--text-dim);
+    text-transform:uppercase;
+  }
+  .epic-caption b{ color: var(--phosphor); font-weight:700; }
+
+  /* ---------- telemetry panel ---------- */
+  .telemetry-panel{
+    width: min(88vw, 380px);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    backdrop-filter: blur(6px);
+    padding: 18px 20px;
+  }
+  .panel-title{
+    font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+    color: var(--phosphor); margin-bottom:14px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .tele-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+    margin-bottom:16px;
+  }
+  .tele-item .label{
+    font-size:9.5px; letter-spacing:0.12em; color: var(--text-dim); text-transform:uppercase;
+  }
+  .tele-item .value{
+    font-size:16px; color: var(--text); font-weight:700; margin-top:2px;
+  }
+  .tele-item .value .unit{ font-size:10px; color: var(--text-dim); font-weight:400; margin-left:3px;}
+
+  .track-grid{
+    position:relative;
+    width:100%;
+    aspect-ratio: 2/1;
+    border:1px solid var(--line);
+    background:
+      repeating-linear-gradient(90deg, rgba(57,255,150,0.06) 0, rgba(57,255,150,0.06) 1px, transparent 1px, transparent calc(100%/12)),
+      repeating-linear-gradient(0deg, rgba(57,255,150,0.06) 0, rgba(57,255,150,0.06) 1px, transparent 1px, transparent calc(100%/6)),
+      #050a08;
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:6px;
+  }
+  .track-grid::before{
+    content:'ECU';
+    position:absolute; left:4px; top:50%; transform:translateY(-50%);
+    font-size:8px; color: var(--text-dim); letter-spacing:0.1em;
+  }
+  .iss-dot{
+    position:absolute;
+    width:9px; height:9px;
+    background: var(--amber);
+    border-radius:50%;
+    box-shadow: 0 0 10px var(--amber), 0 0 20px rgba(255,180,84,0.5);
+    transform: translate(-50%,-50%);
+    transition: left 0.6s linear, top 0.6s linear;
+  }
+  .iss-trail{
+    position:absolute;
+    width:3px; height:3px;
+    background: rgba(255,180,84,0.5);
+    border-radius:50%;
+    transform: translate(-50%,-50%);
+  }
+  .grid-caption{
+    font-size:9px; color: var(--text-dim); letter-spacing:0.08em; text-align:right;
+  }
+
+  .footer-note{
+    position:relative; z-index:2;
+    text-align:center;
+    font-size:9.5px;
+    letter-spacing:0.1em;
+    color: var(--text-dim);
+    padding-bottom:14px;
+    text-transform:uppercase;
+  }
+  .footer-note b{ color:var(--phosphor-dim); }
+
+  @media (max-width: 720px){
+    .main{ flex-direction:column; gap:22px; padding-top:6px; }
+    .globe-wrap{ width:min(62vw,300px); height:min(62vw,300px); }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div id="stars"></div>
+
+  <div class="hud-top">
+    <div class="title-block">
+      <h1>TIERRA <span>EN VIVO</span></h1>
+      <div class="sub">Foto real vía NASA EPIC · Posición orbital ISS en tiempo real</div>
+    </div>
+    <div class="clock-block">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="status"><span class="dot-pulse" id="linkDot"></span><span id="linkStatus">Conectando…</span></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="globe-stage">
+      <div class="globe-wrap" id="globeWrap">
+        <div class="glow-ring"></div>
+        <div class="earth-disc-holder" id="discHolder">
+          <div class="disc-placeholder" id="discPlaceholder">Cargando imagen satelital…</div>
+          <img id="earthImg" class="earth-disc idle-spin" alt="Imagen más reciente de la Tierra, cámara EPIC, satélite DSCOVR">
+          <div class="scanline"></div>
+          <div class="zoom-hint" id="zoomHint">Scroll o pellizca para acercar</div>
+          <div class="zoom-controls">
+            <div class="zoom-btn" id="zoomIn" title="Acercar">+</div>
+            <div class="zoom-btn" id="zoomOut" title="Alejar">−</div>
+            <div class="zoom-btn" id="zoomReset" title="Restablecer">⟲</div>
+          </div>
+        </div>
+      </div>
+      <div class="epic-caption" id="epicCaption">— sin datos —</div>
+    </div>
+
+    <div class="telemetry-panel">
+      <div class="panel-title">
+        <span>TELEMETRÍA · ISS (ZARYA)</span>
+        <span id="issAge">--</span>
+      </div>
+      <div class="tele-grid">
+        <div class="tele-item">
+          <div class="label">Latitud</div>
+          <div class="value" id="issLat">--<span class="unit">°</span></div>
+        </div>
+        <div class="tele-item">
+          <div class="label">Longitud</div>
+          <div class="value" id="issLon">--<span class="unit">°</span></div>
+        </div>
+        <div class="tele-item">
+          <div class="label">Altitud</div>
+          <div class="value" id="issAlt">--<span class="unit">km</span></div>
+        </div>
+        <div class="tele-item">
+          <div class="label">Velocidad</div>
+          <div class="value" id="issVel">--<span class="unit">km/h</span></div>
+        </div>
+      </div>
+      <div class="track-grid" id="trackGrid">
+        <div class="iss-dot" id="issDot" style="left:50%; top:50%;"></div>
+      </div>
+      <div class="grid-caption">−180°W ................. 0° ................. +180°E</div>
+    </div>
+  </div>
+
+  <div class="footer-note">Datos: <b>NASA EPIC / DSCOVR</b> &nbsp;·&nbsp; <b>Where The ISS At?</b> API &nbsp;·&nbsp; actualización automática</div>
+</div>
+
+<script>
+(function(){
+  // ---------- starfield ----------
+  const starsEl = document.getElementById('stars');
+  const STAR_COUNT = 140;
+  for(let i=0;i<STAR_COUNT;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random()*1.8 + 0.6;
+    s.style.width = size+'px';
+    s.style.height = size+'px';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.setProperty('--dur', (2 + Math.random()*4).toFixed(2)+'s');
+    s.style.animationDelay = (Math.random()*4).toFixed(2)+'s';
+    starsEl.appendChild(s);
+  }
+
+  // ---------- clock ----------
+  const clockEl = document.getElementById('clock');
+  function tickClock(){
+    const now = new Date();
+    clockEl.textContent = now.toUTCString().slice(17,25) + ' UTC';
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // ---------- globe parallax tilt ----------
+  const globeWrap = document.getElementById('globeWrap');
+  window.addEventListener('mousemove', (e)=>{
+    const w = window.innerWidth, h = window.innerHeight;
+    const rx = ((e.clientY / h) - 0.5) * -10;
+    const ry = ((e.clientX / w) - 0.5) * 14;
+    globeWrap.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+  });
+
+  // ---------- zoom & pan on the earth image ----------
+  const discHolder = document.getElementById('discHolder');
+  const zoomHint = document.getElementById('zoomHint');
+  const zoomInBtn = document.getElementById('zoomIn');
+  const zoomOutBtn = document.getElementById('zoomOut');
+  const zoomResetBtn = document.getElementById('zoomReset');
+
+  const MIN_SCALE = 1, MAX_SCALE = 4.5;
+  let scale = 1, panX = 0, panY = 0;
+  let isDragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+  let hintTimeout = null;
+
+  function applyTransform(){
+    earthImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    if(scale > 1){
+      earthImg.classList.remove('idle-spin');
+    } else {
+      earthImg.classList.add('idle-spin');
+    }
+  }
+
+  function clampPan(){
+    // keep the image from being dragged absurdly far off-view
+    const holderRect = discHolder.getBoundingClientRect();
+    const maxOffset = (holderRect.width * (scale - 1)) / 2 + holderRect.width * 0.15;
+    panX = Math.max(-maxOffset, Math.min(maxOffset, panX));
+    panY = Math.max(-maxOffset, Math.min(maxOffset, panY));
+  }
+
+  function setScale(newScale){
+    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+    if(scale === 1){ panX = 0; panY = 0; }
+    clampPan();
+    applyTransform();
+  }
+
+  function hideHintSoon(){
+    if(hintTimeout) clearTimeout(hintTimeout);
+    hintTimeout = setTimeout(()=>{ zoomHint.style.opacity = '0'; }, 2500);
+  }
+  hideHintSoon();
+
+  // mouse wheel zoom
+  discHolder.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.25 : 0.25;
+    setScale(scale + delta);
+    hideHintSoon();
+  }, { passive:false });
+
+  // drag to pan (mouse)
+  discHolder.addEventListener('mousedown', (e)=>{
+    if(scale <= 1) return;
+    isDragging = true;
+    discHolder.classList.add('dragging');
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    panStartX = panX; panStartY = panY;
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if(!isDragging) return;
+    panX = panStartX + (e.clientX - dragStartX);
+    panY = panStartY + (e.clientY - dragStartY);
+    clampPan();
+    applyTransform();
+  });
+  window.addEventListener('mouseup', ()=>{
+    isDragging = false;
+    discHolder.classList.remove('dragging');
+  });
+
+  // touch: pinch to zoom + drag to pan
+  let touchStartDist = null, touchStartScale = 1;
+  let lastTouchX = 0, lastTouchY = 0;
+
+  function touchDist(t1, t2){
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
+
+  discHolder.addEventListener('touchstart', (e)=>{
+    hideHintSoon();
+    if(e.touches.length === 2){
+      touchStartDist = touchDist(e.touches[0], e.touches[1]);
+      touchStartScale = scale;
+    } else if(e.touches.length === 1 && scale > 1){
+      lastTouchX = e.touches[0].clientX;
+      lastTouchY = e.touches[0].clientY;
+    }
+  }, { passive:true });
+
+  discHolder.addEventListener('touchmove', (e)=>{
+    if(e.touches.length === 2 && touchStartDist){
+      e.preventDefault();
+      const newDist = touchDist(e.touches[0], e.touches[1]);
+      setScale(touchStartScale * (newDist / touchStartDist));
+    } else if(e.touches.length === 1 && scale > 1){
+      e.preventDefault();
+      const dx = e.touches[0].clientX - lastTouchX;
+      const dy = e.touches[0].clientY - lastTouchY;
+      panX += dx; panY += dy;
+      lastTouchX = e.touches[0].clientX;
+      lastTouchY = e.touches[0].clientY;
+      clampPan();
+      applyTransform();
+    }
+  }, { passive:false });
+
+  discHolder.addEventListener('touchend', (e)=>{
+    if(e.touches.length < 2) touchStartDist = null;
+  });
+
+  // double-click / double-tap to reset
+  discHolder.addEventListener('dblclick', ()=> setScale(1));
+
+  // buttons
+  zoomInBtn.addEventListener('click', ()=>{ setScale(scale + 0.6); hideHintSoon(); });
+  zoomOutBtn.addEventListener('click', ()=>{ setScale(scale - 0.6); hideHintSoon(); });
+  zoomResetBtn.addEventListener('click', ()=> setScale(1));
+
+  // ---------- link status ----------
+  const linkDot = document.getElementById('linkDot');
+  const linkStatus = document.getElementById('linkStatus');
+  let epicOk = false, issOk = false;
+  function refreshLinkStatus(){
+    if(epicOk && issOk){
+      linkDot.classList.remove('bad');
+      linkStatus.textContent = 'Feed activo';
+    } else if(!epicOk && !issOk){
+      linkDot.classList.add('bad');
+      linkStatus.textContent = 'Sin señal';
+    } else {
+      linkDot.classList.remove('bad');
+      linkStatus.textContent = 'Señal parcial';
+    }
+  }
+
+  // ---------- EPIC (real Earth photo) ----------
+  const earthImg = document.getElementById('earthImg');
+  const discPlaceholder = document.getElementById('discPlaceholder');
+  const epicCaption = document.getElementById('epicCaption');
+
+  // ⚠️ La clave DEMO_KEY es compartida por miles de personas y se agota rápido
+  // (límite: 30 peticiones/hora, 50/día por IP). Consigue la tuya gratis en
+  // https://api.nasa.gov (toma 30 segundos, sin tarjeta) y pégala aquí:
+  const NASA_KEY = 'JqkYPNmYcUbLxl0No02zjax7732RypBRc0Bb9vfc';
+
+  let hasLoadedOnce = false;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  async function loadEpic(){
+    try{
+      const res = await fetch(`https://api.nasa.gov/EPIC/api/natural/images?api_key=${NASA_KEY}`);
+      if(res.status === 429){
+        throw new Error('RATE_LIMIT');
+      }
+      if(!res.ok) throw new Error('EPIC HTTP '+res.status);
+      const data = await res.json();
+      if(!Array.isArray(data) || data.length === 0) throw new Error('Sin imágenes disponibles');
+      const latest = data[data.length - 1];
+      const [datePart] = latest.date.split(' ');
+      const [y,m,d] = datePart.split('-');
+      const url = `https://epic.gsfc.nasa.gov/archive/natural/${y}/${m}/${d}/jpg/${latest.image}.jpg`;
+
+      await new Promise((resolve, reject)=>{
+        const testImg = new Image();
+        testImg.onload = resolve;
+        testImg.onerror = ()=> reject(new Error('IMG_LOAD_FAILED'));
+        testImg.src = url;
+      });
+
+      earthImg.src = url;
+      earthImg.classList.add('loaded');
+      discPlaceholder.style.display = 'none';
+      const dt = new Date(latest.date.replace(' ','T')+'Z');
+      epicCaption.innerHTML = `Captura EPIC · <b>${dt.toISOString().slice(0,16).replace('T',' ')} UTC</b>`;
+      epicOk = true;
+      hasLoadedOnce = true;
+    }catch(err){
+      epicOk = false;
+      if(hasLoadedOnce){
+        // keep showing the last good image, just flag the caption
+        epicCaption.innerHTML = `Última captura disponible · <span style="color:var(--danger)">sin actualizar</span>`;
+      } else if(err.message === 'RATE_LIMIT'){
+        discPlaceholder.textContent = 'Límite de peticiones de la clave DEMO_KEY alcanzado (compartida por miles de usuarios). Usa tu propia clave gratis de api.nasa.gov para solucionarlo.';
+        epicCaption.textContent = 'Límite de la API alcanzado';
+      } else {
+        discPlaceholder.textContent = 'No se pudo contactar NASA EPIC. Reintentando…';
+        epicCaption.textContent = 'Sin conexión con EPIC';
+      }
+    }
+    refreshLinkStatus();
+  }
+
+  loadEpic();
+  setInterval(loadEpic, 10 * 60 * 1000); // re-check every 10 min
+
+  // ---------- ISS live position ----------
+  const issLat = document.getElementById('issLat');
+  const issLon = document.getElementById('issLon');
+  const issAlt = document.getElementById('issAlt');
+  const issVel = document.getElementById('issVel');
+  const issAge = document.getElementById('issAge');
+  const issDot = document.getElementById('issDot');
+  const trackGrid = document.getElementById('trackGrid');
+
+  let lastIssUpdate = null;
+  const trailPoints = [];
+  const MAX_TRAIL = 25;
+
+  function placeDot(lat, lon){
+    const leftPct = ((lon + 180) / 360) * 100;
+    const topPct = ((90 - lat) / 180) * 100;
+    issDot.style.left = leftPct + '%';
+    issDot.style.top = topPct + '%';
+    return {leftPct, topPct};
+  }
+
+  function addTrail(leftPct, topPct){
+    const t = document.createElement('div');
+    t.className = 'iss-trail';
+    t.style.left = leftPct + '%';
+    t.style.top = topPct + '%';
+    trackGrid.appendChild(t);
+    trailPoints.push(t);
+    if(trailPoints.length > MAX_TRAIL){
+      const old = trailPoints.shift();
+      old.remove();
+    }
+  }
+
+  async function loadIss(){
+    try{
+      const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+      if(!res.ok) throw new Error('ISS HTTP '+res.status);
+      const data = await res.json();
+      issLat.innerHTML = data.latitude.toFixed(2) + '<span class="unit">°</span>';
+      issLon.innerHTML = data.longitude.toFixed(2) + '<span class="unit">°</span>';
+      issAlt.innerHTML = data.altitude.toFixed(1) + '<span class="unit">km</span>';
+      issVel.innerHTML = Math.round(data.velocity) + '<span class="unit">km/h</span>';
+      const {leftPct, topPct} = placeDot(data.latitude, data.longitude);
+      addTrail(leftPct, topPct);
+      lastIssUpdate = Date.now();
+      issOk = true;
+    }catch(err){
+      issOk = false;
+    }
+    refreshLinkStatus();
+  }
+
+  loadIss();
+  setInterval(loadIss, 5000);
+
+  setInterval(()=>{
+    if(lastIssUpdate){
+      const secs = Math.round((Date.now() - lastIssUpdate)/1000);
+      issAge.textContent = 'hace ' + secs + 's';
+    }
+  }, 1000);
+
+})();
+</script>
+</body>
+</html>
